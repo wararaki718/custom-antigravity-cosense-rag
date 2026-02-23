@@ -1,0 +1,31 @@
+# Cosense-Elasticsearch RAG Project Instructions
+
+This project is a RAG application using Cosense, SPLADE, Elasticsearch, and Ollama (Gemma3).
+
+## Project Structure
+- `encoder/`: Python service (FastAPI) for Japanese SPLADE encoding.
+- `search-api/`: Python service (FastAPI) for search and RAG orchestration.
+- `batch/`: Python service for data ingestion from Cosense.
+- `ui/`: React + TypeScript frontend.
+- `docker/`: Infrastructure configuration (Elasticsearch + Kuromoji).
+
+## Service Communication
+- `batch` -> `encoder`: POST `/encode` to get vectors.
+- `batch` -> `elasticsearch`: Index documents and vectors.
+- `search-api` -> `encoder`: POST `/encode` for query vector.
+- `search-api` -> `elasticsearch`: Hybrid search.
+- `search-api` -> `ollama`: Generate answer with context.
+
+## Coding Standards
+- **Python**: Use `uv` for dependency management. `ruff` for linting, `pytest` for testing.
+- **Frontend**: `npm/vite`. `eslint` and `prettier` for linting.
+- **Docker**: All services must have a `Dockerfile`. Use `compose.yaml` for orchestration.
+
+## Manual Execution (Batch)
+- Run manual ingestion via: `docker compose run --rm batch uv run main.py`
+
+## Skills
+- [cosense-ingestion](file:///Users/wararaki/workspace/custom-antigravity-cosense-rag/skills/cosense-ingestion/SKILL.md)
+- [splade-encoding](file:///Users/wararaki/workspace/custom-antigravity-cosense-rag/skills/splade-encoding/SKILL.md)
+- [elasticsearch-rag](file:///Users/wararaki/workspace/custom-antigravity-cosense-rag/skills/elasticsearch-rag/SKILL.md)
+- [ollama-generation](file:///Users/wararaki/workspace/custom-antigravity-cosense-rag/skills/ollama-generation/SKILL.md)

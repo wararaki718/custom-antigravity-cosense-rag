@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  elasticsearch:
+    build: ./elasticsearch
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  encoder:
+    build: ./encoder
+    container_name: encoder
+    ports:
+      - "8001:8001"
+    environment:
+      - MODEL_NAME=hotchpotch/japanese-splade-base-v1
+    # Note: GPU support can be added if needed, but keeping it simple for now
+
+  search-api:
+    build: ./search-api
+    container_name: search-api
+    ports:
+      - "8000:8000"
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - ENCODER_URL=http://encoder:8001
+      - OLLAMA_URL=http://host.docker.internal:11434
+    depends_on:
+      - elasticsearch
+      - encoder
+
+  batch:
+    build: ./batch
+    container_name: batch
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - ENCODER_URL=http://encoder:8001
+    depends_on:
+      - elasticsearch
+      - encoder
+    # Overriding entrypoint to keep container alive for manual execution if needed
+    # Or just use `docker compose run --rm batch uv run main.py`
+    entrypoint: [ "tail", "-f", "/dev/null" ]
+
+  ui:
+    build: ./ui
+    container_name: ui
+    ports:
+      - "3000:80"
+    depends_on:
+      - search-api
+
+volumes:
+  esdata:
+    driver: local
