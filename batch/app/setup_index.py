@@ -2,6 +2,10 @@ import os
 import time
 
 from elasticsearch import Elasticsearch
+try:
+    from .logger import logger
+except ImportError:
+    from logger import logger
 
 ELASTICSEARCH_URL = os.getenv("ELASTICSEARCH_URL", "http://localhost:9200")
 INDEX_NAME = os.getenv("INDEX_NAME", "cosense-pages")
@@ -17,11 +21,11 @@ def setup_index():
                 break
         except Exception:
             pass
-        print("Waiting for Elasticsearch...")
+        logger.info("Waiting for Elasticsearch...")
         time.sleep(5)
 
     if es.indices.exists(index=INDEX_NAME):
-        print(f"Index {INDEX_NAME} already exists.")
+        logger.info(f"Index {INDEX_NAME} already exists.")
         return
 
     mapping = {
@@ -49,7 +53,7 @@ def setup_index():
     }
 
     es.indices.create(index=INDEX_NAME, body=mapping)
-    print(f"Index {INDEX_NAME} created successfully.")
+    logger.info(f"Index {INDEX_NAME} created successfully.")
 
 
 if __name__ == "__main__":

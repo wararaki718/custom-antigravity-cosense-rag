@@ -9,8 +9,10 @@ from elasticsearch import Elasticsearch, helpers
 
 try:
     from .setup_index import INDEX_NAME, setup_index
+    from .logger import logger
 except ImportError:
     from setup_index import INDEX_NAME, setup_index
+    from logger import logger
 
 load_dotenv()
 
@@ -21,7 +23,7 @@ ENCODER_URL = os.getenv("ENCODER_URL", "http://localhost:8001")
 ELASTICSEARCH_URL = os.getenv("ELASTICSEARCH_URL", "http://localhost:9200")
 
 if not COSENSE_PROJECT:
-    print("Warning: COSENSE_PROJECT is not set. Ingestion will fail.")
+    logger.warning("COSENSE_PROJECT is not set. Ingestion will fail.")
 
 client = httpx.Client(timeout=30.0)
 es = Elasticsearch(ELASTICSEARCH_URL)
@@ -74,23 +76,25 @@ def get_vector(text):
         response.raise_for_status()
         return response.json()["vectors"]
     except Exception as e:
-        print(f"Error encoding text: {e}")
+        logger.error(f"Error encoding text: {e}")
         return {}
 
 
 def run_ingestion():
     if not COSENSE_PROJECT:
-        print("Error: COSENSE_PROJECT is not set.")
+        logger.error("COSENSE_PROJECT is not set.")
         return
 
-    print("Setting up index...")
+    logger.info("Setting up index...")
     setup_index()
 
-    print(f"Fetching pages for project: {COSENSE_PROJECT}")
+    logger.info(f"Fetching pages for project: {COSENSE_PROJECT}")
     pages = fetch_pages()
-    print(f"Found {len(pages)} pages.")
+    total_pages = len(pages)
+    logger.info(f"Found {total_pages} pages.")
 
     actions = []
+    processed_count = 0
     for page in tqdm(pages, desc="Ingesting pages"):
         try:
             title = page["title"]
@@ -112,6 +116,11 @@ def run_ingestion():
                 "vectors": vectors,
             }
             actions.append(doc)
+            processed_count += 1
+
+            # Periodic progress logging
+            if processed_count % 10 == 0:
+                logger.info(f"Processed {processed_count}/{total_pages} pages...")
 
             # Bulk index every 50 docs
             if len(actions) >= 50:
@@ -121,12 +130,12 @@ def run_ingestion():
             time.sleep(0.5)  # Rate limiting
 
         except Exception as e:
-            print(f"Error processing page {page.get('title')}: {e}")
+            logger.error(f"Error processing page {page.get('title')}: {e}")
 
     if actions:
         helpers.bulk(es, actions)
 
-    print("Ingestion complete.")
+    logger.info("Ingestion complete.")
 
 
 if __name__ == "__main__":
