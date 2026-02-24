@@ -12,4 +12,4 @@ RUN uv sync --frozen --no-cache
 COPY . .
 
 # Batch might be run as a script
-CMD ["uv", "run", "main.py"]
+CMD ["uv", "run", "app/main.py"]

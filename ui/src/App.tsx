@@ -5,9 +5,9 @@ import { Search, Sparkles, ExternalLink, Loader2 } from 'lucide-react';
 import './index.css';
 
 interface SearchResult {
-  title: str;
-  content: str;
-  url: str;
+  title: string;
+  content: string;
+  url: string;
   score: number;
 }
 

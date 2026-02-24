@@ -18,4 +18,4 @@ RUN uv sync --frozen --no-cache
 COPY . .
 
 # Default command (can be overridden)
-CMD ["uv", "run", "main.py"]
+CMD ["uv", "run", "app/main.py"]
