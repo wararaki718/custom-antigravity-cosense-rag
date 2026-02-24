@@ -1,0 +1,15 @@
+# Exclude local development artifacts
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+tests/
+
+# Exclude documentation and build configuration
+README.md
+Dockerfile
+.dockerignore
+.gitignore
+
+# Exclude git history
+.git/

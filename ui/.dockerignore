@@ -1,0 +1,14 @@
+# Exclude local development artifacts
+node_modules/
+dist/
+.next/
+out/
+
+# Exclude documentation and build configuration
+README.md
+Dockerfile
+.dockerignore
+.gitignore
+
+# Exclude git history
+.git/

@@ -32,7 +32,13 @@ async def encode(request: EncodeRequest):
         return EncodeResponse(vectors={})
 
     try:
-        inputs = tokenizer(request.text, return_tensors="pt")
+        inputs = tokenizer(
+            request.text,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+            max_length=512,
+        )
         with torch.no_grad():
             outputs = model(**inputs)
 
@@ -60,7 +66,12 @@ async def encode(request: EncodeRequest):
         return EncodeResponse(vectors=vectors)
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+
+        error_msg = f"{type(e).__name__}: {str(e)}"
+        print(f"Error during encoding: {error_msg}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=error_msg)
 
 
 @app.get("/health")

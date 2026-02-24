@@ -1,5 +1,6 @@
 import os
 import time
+import urllib.parse
 
 import httpx
 from dotenv import load_dotenv
@@ -8,11 +9,11 @@ from tqdm import tqdm
 from elasticsearch import Elasticsearch, helpers
 
 try:
-    from .setup_index import INDEX_NAME, setup_index
     from .logger import logger
+    from .setup_index import INDEX_NAME, setup_index
 except ImportError:
-    from setup_index import INDEX_NAME, setup_index
     from logger import logger
+    from setup_index import INDEX_NAME, setup_index
 
 load_dotenv()
 
@@ -27,6 +28,22 @@ if not COSENSE_PROJECT:
 
 client = httpx.Client(timeout=30.0)
 es = Elasticsearch(ELASTICSEARCH_URL)
+
+
+def wait_for_encoder():
+    """Wait for the encoder service to be ready."""
+    logger.info(f"Waiting for encoder at {ENCODER_URL}...")
+    for i in range(30):
+        try:
+            response = client.get(f"{ENCODER_URL}/health")
+            if response.status_code == 200:
+                logger.info("Encoder is ready!")
+                return True
+        except Exception as e:
+            logger.warning(f"Encoder not ready yet (attempt {i+1}/30): {e}")
+        time.sleep(5)
+    logger.error("Encoder service timed out.")
+    return False
 
 
 def fetch_pages():
@@ -59,7 +76,8 @@ def fetch_pages():
 
 def fetch_page_detail(title):
     """Fetch the full content of a specific page."""
-    url = f"https://scrapbox.io/api/pages/{COSENSE_PROJECT}/{title}"
+    encoded_title = urllib.parse.quote(title, safe="")
+    url = f"https://scrapbox.io/api/pages/{COSENSE_PROJECT}/{encoded_title}"
     headers = {}
     if COSENSE_SID:
         headers["Cookie"] = f"connect.sid={COSENSE_SID}"
@@ -87,6 +105,10 @@ def run_ingestion():
 
     logger.info("Setting up index...")
     setup_index()
+
+    if not wait_for_encoder():
+        logger.error("Aborting ingestion: encoder not ready.")
+        return
 
     logger.info(f"Fetching pages for project: {COSENSE_PROJECT}")
     pages = fetch_pages()

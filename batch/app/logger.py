@@ -1,6 +1,7 @@
 import logging
 import sys
 
+
 def setup_logger(name: str = "batch"):
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)

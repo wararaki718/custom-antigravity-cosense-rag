@@ -32,6 +32,8 @@ services:
     container_name: search-api
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - ENCODER_URL=http://encoder:8001
@@ -43,15 +45,16 @@ services:
   batch:
     build: ./batch
     container_name: batch
+    profiles:
+      - manual
+    env_file:
+      - .env
     environment:
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - ENCODER_URL=http://encoder:8001
     depends_on:
       - elasticsearch
       - encoder
-    # Overriding entrypoint to keep container alive for manual execution if needed
-    # Or just use `docker compose run --rm batch uv run main.py`
-    entrypoint: [ "tail", "-f", "/dev/null" ]
 
   ui:
     build: ./ui
